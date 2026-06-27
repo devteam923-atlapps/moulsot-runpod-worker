@@ -35,8 +35,19 @@ class EndpointHandler:
 
     def __call__(self, data: dict[str, Any]) -> dict[str, Any]:
         payload = data.get("inputs") or data.get("input") or data
-        audio_path, cleanup_required = self._resolve_audio_path(payload)
         language = self._resolve_language(payload)
+        prompt = self._resolve_prompt(payload)
+
+        try:
+            audio_path, cleanup_required = self._resolve_audio_path(payload)
+        except ValueError as exc:
+            return {
+                "error": str(exc),
+                "model": self.model_id,
+                "language": language or "auto",
+                "prompt": prompt,
+                "received": self._summarize_payload(payload),
+            }
 
         try:
             result = self.model.transcribe(audio=str(audio_path), language=language)
@@ -54,6 +65,13 @@ class EndpointHandler:
     def _resolve_language(self, payload: Any) -> str | None:
         if isinstance(payload, dict):
             value = payload.get("language") or payload.get("lang")
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return None
+
+    def _resolve_prompt(self, payload: Any) -> str | None:
+        if isinstance(payload, dict):
+            value = payload.get("prompt") or payload.get("text") or payload.get("transcript")
             if isinstance(value, str) and value.strip():
                 return value.strip()
         return None
@@ -88,6 +106,22 @@ class EndpointHandler:
                 return self._write_temp_audio(raw_bytes), True
 
         raise ValueError("Unsupported audio payload. Expected a file path or audio bytes.")
+
+    def _summarize_payload(self, payload: Any) -> dict[str, Any]:
+        if isinstance(payload, dict):
+            summary: dict[str, Any] = {}
+            for key in ("prompt", "text", "transcript", "language", "lang", "path"):
+                value = payload.get(key)
+                if isinstance(value, str) and value.strip():
+                    summary[key] = value.strip()
+            for key in ("audio", "file", "input"):
+                value = payload.get(key)
+                if isinstance(value, str) and value.strip():
+                    summary[key] = "[redacted string]"
+            return summary
+        if isinstance(payload, str):
+            return {"input": payload[:64]}
+        return {"input_type": type(payload).__name__}
 
     def _decode_bytes(self, value: str) -> bytes:
         if value.startswith("data:") and "," in value:
