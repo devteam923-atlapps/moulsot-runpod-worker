@@ -24,7 +24,6 @@ from torch.nn import functional as F
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache, DynamicCache
 from transformers.generation import GenerationMixin
-from transformers.integrations import use_kernel_forward_from_hub
 from transformers.masking_utils import create_causal_mask
 from transformers.modeling_flash_attention_utils import FlashAttentionKwargs
 from transformers.modeling_layers import GradientCheckpointingLayer
@@ -47,7 +46,6 @@ from .configuration_qwen3_asr import (
 )
 
 
-@use_kernel_forward_from_hub("RMSNorm")
 class Qwen3ASRTextRMSNorm(nn.Module):
     def __init__(self, hidden_size, eps: float = 1e-6) -> None:
         """
@@ -853,7 +851,6 @@ class Qwen3ASRThinkerTextMLP(nn.Module):
         return down_proj
 
 
-@use_kernel_forward_from_hub("RMSNorm")
 class Qwen3ASRThinkerTextRMSNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-6):
         """
