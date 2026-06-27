@@ -21,4 +21,4 @@ COPY . .
 
 ENV MODEL_ID=atlasia/moulsot.v0.3
 
-CMD ["python", "handler.py"]
+CMD ["python", "main.py"]
