@@ -36,20 +36,41 @@ class EndpointHandler:
             except Exception:
                 pass
 
-        for module in self.model.modules():
-            config = getattr(module, "config", None)
-            if config is None:
+        candidates = [getattr(self.model, "model", None), self.model]
+        seen: set[int] = set()
+        for candidate in candidates:
+            if candidate is None or id(candidate) in seen:
                 continue
-            if hasattr(config, "_attn_implementation"):
-                try:
-                    config._attn_implementation = "eager"
-                except Exception:
-                    pass
-            if hasattr(config, "attn_implementation"):
-                try:
-                    config.attn_implementation = "eager"
-                except Exception:
-                    pass
+            seen.add(id(candidate))
+
+            config = getattr(candidate, "config", None)
+            if config is not None:
+                if hasattr(config, "_attn_implementation"):
+                    try:
+                        config._attn_implementation = "eager"
+                    except Exception:
+                        pass
+                if hasattr(config, "attn_implementation"):
+                    try:
+                        config.attn_implementation = "eager"
+                    except Exception:
+                        pass
+
+            if hasattr(candidate, "modules"):
+                for module in candidate.modules():
+                    module_config = getattr(module, "config", None)
+                    if module_config is None:
+                        continue
+                    if hasattr(module_config, "_attn_implementation"):
+                        try:
+                            module_config._attn_implementation = "eager"
+                        except Exception:
+                            pass
+                    if hasattr(module_config, "attn_implementation"):
+                        try:
+                            module_config.attn_implementation = "eager"
+                        except Exception:
+                            pass
 
     def _resolve_model_path(self, path: str) -> str:
         env_model_id = os.environ.get("MODEL_ID", "").strip()
