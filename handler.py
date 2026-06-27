@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import runpod
+import torch
 
 from qwen_asr import Qwen3ASRModel
 
@@ -24,6 +25,31 @@ class EndpointHandler:
             device_map="cuda:0",
             attn_implementation=attn_implementation,
         )
+        self._force_safe_attention_settings()
+
+    def _force_safe_attention_settings(self) -> None:
+        if torch.cuda.is_available():
+            try:
+                torch.backends.cuda.enable_flash_sdp(False)
+                torch.backends.cuda.enable_mem_efficient_sdp(False)
+                torch.backends.cuda.enable_math_sdp(True)
+            except Exception:
+                pass
+
+        for module in self.model.modules():
+            config = getattr(module, "config", None)
+            if config is None:
+                continue
+            if hasattr(config, "_attn_implementation"):
+                try:
+                    config._attn_implementation = "eager"
+                except Exception:
+                    pass
+            if hasattr(config, "attn_implementation"):
+                try:
+                    config.attn_implementation = "eager"
+                except Exception:
+                    pass
 
     def _resolve_model_path(self, path: str) -> str:
         env_model_id = os.environ.get("MODEL_ID", "").strip()
