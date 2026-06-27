@@ -16,10 +16,13 @@ _HANDLER: EndpointHandler | None = None
 class EndpointHandler:
     def __init__(self, path: str = "") -> None:
         self.model_id = self._resolve_model_path(path)
+        attn_implementation = os.environ.get("MODEL_ATTN_IMPLEMENTATION", "eager").strip() or "eager"
+        dtype = os.environ.get("MODEL_DTYPE", "float16").strip() or "float16"
         self.model = Qwen3ASRModel.from_pretrained(
             self.model_id,
-            dtype="float16",
-            device_map="cuda",
+            dtype=dtype,
+            device_map="cuda:0",
+            attn_implementation=attn_implementation,
         )
 
     def _resolve_model_path(self, path: str) -> str:
