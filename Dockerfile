@@ -19,6 +19,7 @@ RUN python -m pip install --upgrade pip && \
 
 COPY . .
 
-ENV MODEL_ID=atlasia/moulsot.v0.3
+ENV MODEL_ID=atlasia/moulsot.v0.3 \
+    MODEL_DTYPE=bfloat16
 
 CMD ["python", "main.py"]

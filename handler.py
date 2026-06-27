@@ -18,7 +18,7 @@ class EndpointHandler:
     def __init__(self, path: str = "") -> None:
         self.model_id = self._resolve_model_path(path)
         attn_implementation = os.environ.get("MODEL_ATTN_IMPLEMENTATION", "eager").strip() or "eager"
-        dtype = os.environ.get("MODEL_DTYPE", "float16").strip() or "float16"
+        dtype = os.environ.get("MODEL_DTYPE", "bfloat16").strip() or "bfloat16"
         self.model = Qwen3ASRModel.from_pretrained(
             self.model_id,
             dtype=dtype,
